@@ -35,10 +35,7 @@ def create_article():
         intro = request.form['intro']
         text = request.form['text']
 
-        article = Article(title=title, intro=intro, text=text)
-
-
-        db.session.add(article)
+        db.session.add(Article(title=title, intro=intro, text=text))
         db.session.commit()
         return redirect('/')
     else:
