@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Результаты поиска</h1>
+    <h2>Пользователи</h2>
+    <ul>
+        {% for user in users %}
+            <li><a href="user/{{user.id}}">{{user.nickname}}</a></li>
+        {% endfor %}
+    </ul>
+    <h2>Товары</h2>
+    <section>
+        {% for product in products %}
+            <div class="product-container" onclick="location.href='../product/{{product.id}}'">
+                <h2 style="text-align: center;">{{product.name}}</h2>
+                <img src="{{url_for('static', filename='uploads/{}'.format(product.photo))}}"
+                     alt="no-image" width="300" height="300">
+            </div>
+        {% endfor %}
+    </section>
+{% endblock %}
