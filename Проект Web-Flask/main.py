@@ -94,7 +94,7 @@ def register():
             }
             return render_template('register.html', **params)
         db_sess = db_session.create_session()
-        if db_sess.query(User).filter(User.email == form.email.data).first():
+        if db_sess.query(User).filter(User.email == form.email.data).first(): # <---------
             params = {
                 'title': 'Регистрация',
                 'form': form,
@@ -124,7 +124,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.email == form.email.data).first()
+        user = db_sess.query(User).filter(User.email == form.email.data).first() # <---------
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             return redirect('/')
@@ -153,7 +153,7 @@ def logout():
 @login_required
 def profile():
     db_sess = db_session.create_session()
-    products = db_sess.query(Product).filter(Product.user_id == current_user.id).all()
+    products = db_sess.query(Product).filter(Product.user_id == current_user.id).all() # <---------
 
     notifications = current_user.notifications
     if notifications.startswith('-1'):
@@ -178,7 +178,7 @@ def get_user(user_id):
     user = db_sess.query(User).get(user_id)
     if not user:
         abort(404)
-    products = db_sess.query(Product).filter(Product.user_id == user.id).all()
+    products = db_sess.query(Product).filter(Product.user_id == user.id).all() # <---------
 
     params = {
         'title': user.username,
@@ -287,7 +287,7 @@ def buy():
     user = db_sess.query(User).get(current_user.id)
 
     for product in products:
-        seller = db_sess.query(User).filter(User.id == product.user_id).first()
+        seller = db_sess.query(User).filter(User.id == product.user_id).first() # <---------
         notifications = re.split(r'(?<!\\);', seller.notifications)
         if notifications[0] == '-1':
             notifications = []
@@ -306,6 +306,19 @@ def buy():
     db_sess.commit()
 
     return redirect('/')
+
+
+@app.route('/feedback')
+@login_required
+def feedback():
+
+    db_sess = db_session.create_session()
+
+    shopcart = [int(_) for _ in current_user.shopcart.split() if int(_) > -1]
+    products = [db_sess.query(Product).get(_) for _ in shopcart]
+    user = db_sess.query(User).get(current_user.id)
+
+    return render_template('/feedback')
 
 
 @app.route('/add_product', methods=['GET', 'POST'])
@@ -481,7 +494,7 @@ def api_get_one_product(product_id):
 @blueprint.route('/api/user/<int:user_id>', methods=['GET'])
 def api_get_products_of_user(user_id):
     db_sess = db_session.create_session()
-    products = db_sess.query(Product).filter(Product.user_id == user_id)
+    products = db_sess.query(Product).filter(Product.user_id == user_id) # <---------
     if not products:
         return jsonify({'error': 'Not found'})
 
