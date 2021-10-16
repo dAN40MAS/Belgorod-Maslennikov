@@ -1,4 +1,4 @@
-from flask import abort, Blueprint, Flask, jsonify, redirect, render_template, request, make_response
+from flask import abort, Blueprint, Flask, jsonify, redirect, render_template, request, make_response, session
 from flask_login import current_user, LoginManager, login_required, login_user, logout_user
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
@@ -8,6 +8,7 @@ from wtforms.validators import DataRequired
 from data import db_session
 from data.user import User
 from data.product import Product
+import datetime
 import os
 import random
 import re
@@ -16,6 +17,7 @@ from string import ascii_letters, digits
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '421b1f57d3e228b7'
 app.config['UPLOAD_FOLDER'] = '/static/uploads'
+app.permanent_session_lifetime = datetime.timedelta(days=10)  # 10 дней будут храниться данные сессии
 
 blueprint = Blueprint('products_api', __name__, template_folder='templates')
 
@@ -82,6 +84,21 @@ def not_found(error):
     return make_response(render_template('error.html', **params), 404)
 
 
+@app.route('/visits-counter/')
+def visits():
+    if 'visits' in session:
+        session['visits'] = session.get('visits') + 1  # чтение и обновление данных сессии
+    else:
+        session['visits'] = 1  # настройка данных сессии
+    return "Total visits: {}".format(session.get('visits'))
+
+
+@app.route('/delete-visits/')
+def delete_visits():
+    session.pop('visits', None)  # удаление данных о посещениях
+    return 'Visits deleted'
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
@@ -127,6 +144,7 @@ def login():
         user = db_sess.query(User).filter(User.email == form.email.data).first() # <---------
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
+            session['user'] = session.get('user')
             return redirect('/')
         params = {
             'title': 'Авторизация',
@@ -457,12 +475,16 @@ def search_results(text):
 def index():
     db_sess = db_session.create_session()
     products = db_sess.query(Product).all()
+    if 'user' in session:
+        params = {
+            'title': 'Онлайн-магазин',
+            'products': products
+        }
+        return render_template('index.html', **params)
+    else:
+        return render_template('error404.html')
 
-    params = {
-        'title': 'Онлайн-магазин',
-        'products': products
-    }
-    return render_template('index.html', **params)
+
 
 
 @blueprint.route('/api/products')
