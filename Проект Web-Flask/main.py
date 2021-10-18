@@ -164,6 +164,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.pop('user')
     return redirect('/')
 
 
